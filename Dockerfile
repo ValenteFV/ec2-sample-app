@@ -13,7 +13,6 @@ COPY . .
 
 RUN npm install
 
-RUN ls
-Run node connection-test.js
+#Run node connection-test.js
 
 CMD [ "node", "index.js" ]
