@@ -12,7 +12,7 @@ WORKDIR /home/node/app
 COPY . .
 
 RUN npm install
+RUN node create-tables.js
+RUN node connection-test.js
 
-#Run node connection-test.js
-
-CMD [ "node", "index.js" ]
+#CMD [ "node", "index.js" ]
