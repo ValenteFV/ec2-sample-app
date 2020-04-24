@@ -7,7 +7,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        - DBHOST=172.18.0.2
+        - DBHOST=172.18.0.22
     depends_on:
       - db
     links:
@@ -17,6 +17,7 @@ services:
     networks:
       mynetwork:
         ipv4_address: 172.18.0.23
+    restart: on-failure
   db:
     container_name: ms5
     image: "mysql:5"
