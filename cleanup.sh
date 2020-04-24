@@ -1,2 +1,3 @@
 docker container rm -f $(docker ps -aq)
-docker network
+
+docker rmi $(docker images -f "dangling=true" -q)

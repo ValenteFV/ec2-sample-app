@@ -1,7 +1,10 @@
 FROM node:14-buster
 EXPOSE 80
 
-ENV DBHOST='localhost'
+
+ARG DBHOST
+
+ENV DBHOST=$DBHOST
 ENV DBUSER='root'
 ENV DBPASSWORD='pokemon'
 
@@ -12,7 +15,7 @@ WORKDIR /home/node/app
 COPY . .
 
 RUN npm install
-RUN node create-tables.js
-RUN node connection-test.js
 
-#CMD [ "node", "index.js" ]
+#ßRUN node connection-test.js
+
+CMD [ "node", "index.js" ]

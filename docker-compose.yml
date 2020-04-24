@@ -1,33 +1,36 @@
 version: '2'
 services:
+
+  app:
+    container_name: app
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - DBHOST=172.18.0.1
+    depends_on:
+      - db
+    links:
+      - db
+    ports:
+      - "80:80"
+    # networks:
+    #   mynetwork:
+    #     ipv4_address: 172.18.0.23
   db:
     container_name: ms5
-
     image: "mysql:5"
     ports:
       - "3306:3306"
-
+    volumes:
+      - ./dump:/docker-entrypoint-initdb.d
     networks:
       mynetwork:
         ipv4_address: 172.18.0.22
     environment:
       - MYSQL_ROOT_PASSWORD=pokemon
+      
 
-
-  app:
-    container_name: app
-    build: .
-    depends_on:
-      - db
-    ports:
-      - "80:80"
-    networks:
-      mynetwork:
-        ipv4_address: 172.18.0.23
-    environment:
-      - DBUSER=root
-      - DBHOST=localhost
-      - DBPASSWORD=pokemon
 
 networks:
     mynetwork:
