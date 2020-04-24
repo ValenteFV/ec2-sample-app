@@ -7,16 +7,16 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        - DBHOST=172.18.0.1
+        - DBHOST=172.18.0.2
     depends_on:
       - db
     links:
       - db
     ports:
       - "80:80"
-    # networks:
-    #   mynetwork:
-    #     ipv4_address: 172.18.0.23
+    networks:
+      mynetwork:
+        ipv4_address: 172.18.0.23
   db:
     container_name: ms5
     image: "mysql:5"
