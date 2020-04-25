@@ -74,24 +74,24 @@ resource "aws_security_group" "allowall" {
 }
 
 resource "aws_eip" "websever" {
-  instance = aws_instance.webserver.id
+  instance = aws_instance.web.id
   vpc = true
   depends_on = [aws_internet_gateway.main]
+  
 
 }
 
-resource "null_resource" "example_provisioner" {
-  triggers = {
-    public_ip = aws_instance.webserver.public_ip
-  }
-  connection {
-    type  = "ssh"
-    host  = aws_instance.webservder.public_ip
-    private_key = "/Users/jowitalapies/Documents/new_terraform_key.pem"
-    user  = "ubuntu"
-    port  = 22
-    agent = true
-  }
+
+variable "key_name" {}
+
+resource "tls_private_key" "example" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "aws_key_pair" "generated_key" {
+  key_name   = var.key_name
+  public_key = tls_private_key.example.public_key_openssh
 }
 
 data "aws_ami" "ubuntu" {
@@ -110,28 +110,29 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"] # Canonical
 }
 
-resource "aws_instance" "webserver" {
-  ami = data.aws_ami.ubuntu.id
+resource "aws_instance" "web" {
+  ami           = data.aws_ami.ubuntu.id
   instance_type = "t2.micro"
-  key_name = "new_terraform_key"
-  availability_zone = "eu-west-2a"
+  key_name      = aws_key_pair.generated_key.key_name
   vpc_security_group_ids = [aws_security_group.allowall.id]
   subnet_id = aws_subnet.main.id
-  public_ip = aws_eip.webserver
+  availability_zone = "eu-west-2a"
 
-  provisioner "remote-exec" {
-    inline = [
-      "echo \"deb https://apt.dockerproject.org/repo ubuntu-xenial main\" | sudo tee /etc/apt/sources.list.d/docker.list",
-      "sudo apt-get update",
-      "sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -o DPkg::options::=\"--force-confdef\" -o DPkg::options::=\"--force-confold\"",
-      "sudo apt-get install -y docker-engine",
-      "sudo service docker start",
-      "sudo usermod -aG docker $USER",
-      "sudo curl -L https://github.com/docker/compose/releases/download/1.21.2/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose",
-      "sudo chmod +x /usr/local/bin/docker-compose",
-      "sudo git clone https://github.com/ValenteFV/ec2-sample-app.git",
-      "sudo docker-compose up -d"
-    ]
-  }
+  
+
+  # provisioner "remote-exec" {
+  #   inline = [
+  #     "echo \"deb https://apt.dockerproject.org/repo ubuntu-xenial main\" | sudo tee /etc/apt/sources.list.d/docker.list",
+  #     "sudo apt-get update",
+  #     "sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -o DPkg::options::=\"--force-confdef\" -o DPkg::options::=\"--force-confold\"",
+  #     "sudo apt-get install -y docker-engine",
+  #     "sudo service docker start",
+  #     "sudo usermod -aG docker $USER",
+  #     "sudo curl -L https://github.com/docker/compose/releases/download/1.21.2/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose",
+  #     "sudo chmod +x /usr/local/bin/docker-compose",
+  #     "sudo git clone https://github.com/ValenteFV/ec2-sample-app.git",
+  #     "sudo docker-compose up -d"
+  #   ]
+  # }
 
 }
