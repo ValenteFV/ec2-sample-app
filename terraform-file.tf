@@ -4,58 +4,66 @@ provider "aws" {
     region  = "eu-west-2" 
     
 }
-#Variables
 
-#variable "key_name" {}
+# Internet Gatewat
+resource "aws_internet_gateway" "prod-igw" {
+    vpc_id = aws_vpc.main.id
+    tags = {
+        Name = "prod-igw"
+    }
+}
+# Route Table
+resource "aws_route_table" "prod-public-crt" {
+    vpc_id = aws_vpc.main.id
+    
+    route {
+        //associated subnet can reach everywhere
+        cidr_block = "0.0.0.0/0" 
+        //CRT uses this IGW to reach internet
+        gateway_id = aws_internet_gateway.prod-igw.id
+    }
+    
+    tags = {
+        Name = "prod-public-crt"
+    }
+}
 
-# #VPC set up
-# resource "aws_vpc" "main" {
-#   cidr_block       = "10.0.0.0/16"
-#   instance_tenancy = "default"
-#   tags = {
-#     Name = "myappvpc"
-#   }
-# }
+# Associate CRT and Subnet
+resource "aws_route_table_association" "prod-crta-public-subnet-1"{
+    subnet_id = aws_subnet.main.id
+    route_table_id = aws_route_table.prod-public-crt.id
+}
 
-# #Internet Gateway
-# resource "aws_internet_gateway" "main" {
-#   vpc_id = aws_vpc.main.id
-#   tags = {
-#     Name = "myinternetgateway"
-#   }
-# }
+# VPC set up
+resource "aws_vpc" "main" {
+  cidr_block       = "10.0.0.0/16"
+  enable_dns_support = "true" #gives you an internal domain name
+  enable_dns_hostnames = "true" #gives you an internal host name
+  enable_classiclink = "false"
+  instance_tenancy = "default"  
+  tags = {
+    Name = "myappvpc"
+  }
+}
 
-# #App Subnet
-# resource "aws_subnet" "main" {
-#   vpc_id = aws_vpc.main.id
-#   cidr_block = "10.0.0.0/24"
-#   availability_zone = "eu-west-2a"
-#   tags = {
-#     Name = "myappsubnet"
-#   }
-# }
 
-# #Route_table
-# resource "aws_route_table" "default" {
-#   vpc_id = aws_vpc.main.id
+#App Subnet
+resource "aws_subnet" "main" {
+  vpc_id = aws_vpc.main.id
+  cidr_block = "10.0.10.0/24"
+  availability_zone = "eu-west-2a"
+  map_public_ip_on_launch = "true"
+  tags = {
+    Name = "myappsubnet"
+  }
+}
 
-#   route {
-#     cidr_block = "0.0.0.0/0"
-#     gateway_id = aws_internet_gateway.main.id
-#   }
-# }
-
-# #Route_table_association
-# resource "aws_route_table_association" "main" {
-#   subnet_id      = aws_subnet.main.id
-#   route_table_id = aws_route_table.default.id
-# }
 
 #Security_group
 resource "aws_security_group" "default" {
   name        = "default-web-ssh"
   description = "Allow port 22 adn 80"
-  #vpc_id      = aws_vpc.main.id
+  vpc_id      = aws_vpc.main.id
 
    ingress {
     from_port   = 22
@@ -89,7 +97,6 @@ resource "aws_eip" "webserver" {
 
 }
 
-
 resource "tls_private_key" "example" {
   algorithm = "RSA"
 }
@@ -109,15 +116,14 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"] # Canonical
 }
 
+# Main Ec2 instance
 resource "aws_instance" "web" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t2.micro"
   key_name      = aws_key_pair.generated_key.key_name
-  #vpc_security_group_ids = [aws_security_group.allowall.id]
-  #subnet_id = aws_subnet.main.id
-  security_groups = [aws_security_group.default.name,
-
-  ]
+  vpc_security_group_ids = [aws_security_group.default.id]
+  subnet_id = aws_subnet.main.id
+  #security_groups = [aws_security_group.default.name,]
   availability_zone = "eu-west-2a"
     # Provicioners, if created inside a resorce
     # they will run when the resource is created, not updated
